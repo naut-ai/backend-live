@@ -12,7 +12,7 @@ from config import system_prompt, title_prompt, elevenlabs_url, did_url, ayesha_
 from litellm import completion
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://naut-demo.web.app/"}})
+CORS(app, resources={r"/*": {"origins": "https://naut-demo.web.app"}})
 
 load_dotenv()
 
