@@ -69,6 +69,8 @@ def ask_avatar():
 
     try:
 
+        #Using openrouter instead of Gemini
+      
         headers = {
             "Authorization": f"Bearer {openrouter_api_key}",
             "Content-Type": "application/json"
