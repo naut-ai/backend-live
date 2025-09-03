@@ -12,7 +12,7 @@ from config import system_prompt, title_prompt, elevenlabs_url, did_url, ayesha_
 from litellm import completion
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://naut-demo.web.app"}})
+CORS(app, resources={r"/*": {"origins": ["https://naut-demo.web.app"]}})
 
 load_dotenv()
 
@@ -33,6 +33,10 @@ cloudinary.config(
 )
 
 video_obj = {}
+
+@app.before_request
+def debug_origin():
+    print("Request Origin:", request.headers.get("Origin"))
 
 @app.route('/ask_video', methods=['POST'])
 def ask_avatar():
