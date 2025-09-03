@@ -24,7 +24,7 @@ def make_speech_friendly(text: str) -> str:
     return text
 
 system_prompt = '''
-"You are Ayesha, a friendly assistant to explain give about the given topic in 100 words. 
+"You are Ayesha, a friendly assistant to explain give about the given topic in 50 words. 
 Do not include emojis in your response. 
 Do not include the title and end of transcript and your reasoning steps.
 '''
@@ -35,7 +35,7 @@ Do not include your reasoning steps or explanations.
 You should return only title without "" and any other extra things.
 '''
 
-model_name = "openai/gpt-oss-20b:free"
+model_name = "mistralai/mistral-small-3.2-24b-instruct:free"
 
 openrouter_url = "https://openrouter.ai/api/v1/chat/completions"
 

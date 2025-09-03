@@ -12,7 +12,7 @@ from config import system_prompt, title_prompt, elevenlabs_url, did_url, ayesha_
 from litellm import completion
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://naut-demo.web.app"]}})
+CORS(app, resources={r"/*": {"origins": ["https://naut-demo.web.app", "http://localhost:5173"]}})
 
 load_dotenv()
 
@@ -21,7 +21,7 @@ cloud_name = os.getenv("CLOUD_NAME")
 cloudinary_api_key = os.getenv("CLOUDINARY_API_KEY")
 cloudinary_api_secret = os.getenv("CLOUDINARY_API_SECRET")
 openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
-# elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
 # did_api_key = os.getenv("DID_API_KEY")
 # gemini_api_key = os.getenv("GEMINI_API_KEY")
 
@@ -125,19 +125,32 @@ def ask_avatar():
     # Step 2: Convert response to voice using ElevenLabs
     try:
         tts_headers = {
-            "xi-api-key": api_credentials["elevenlabsApiKey"],
-            "Content-Type": "application/json"
+            "xi-api-key": elevenlabs_api_key,
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg"
         }
         tts_data = {
             "text": speech,
             "voice_settings": {"stability": 0.5, "similarity_boost": 0.5}
         }
 
+        print("🔹 ELEVENLABS URL:", elevenlabs_url)
+        print("🔹 API KEY:", api_credentials.get("elevenlabsApiKey"))
+        print("🔹 HEADERS:", tts_headers)
+        print("🔹 BODY:", tts_data)
+
         tts_response = requests.post(elevenlabs_url, headers=tts_headers, json=tts_data)
-        print(tts_response)
+
+        # Log full response for debugging
+        print("🔹 STATUS:", tts_response.status_code)
+        print("🔹 RESPONSE:", tts_response.text)
+
+        if tts_response.status_code == 401:
+            return jsonify({"message": "Unauthorized - Invalid API Key"}), 401
+
     except Exception as e:
-        print(e)
-        return jsonify({"message":"Error from ElevenLabs!"})
+        print("🔹 Exception:", e)
+        return jsonify({"message": "Error from ElevenLabs!"}), 500
     
     audio_content = tts_response.content
     audio_base64 = base64.b64encode(audio_content).decode()
@@ -148,7 +161,8 @@ def ask_avatar():
     try:
         upload_result = cloudinary.uploader.upload(
         "data:audio/mpeg;base64," + audio_base64,
-        resource_type="video"  # audio is treated as video resource
+        resource_type="video",  # audio is treated as video resource
+        format="mp3"
         )
     except Exception as e:
         print(e)
