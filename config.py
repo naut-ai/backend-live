@@ -35,7 +35,7 @@ Do not include your reasoning steps or explanations.
 You should return only title without "" and any other extra things.
 '''
 
-model_name = "deepseek/deepseek-r1-0528:free"
+model_name = "openai/gpt-oss-20b:free"
 
 openrouter_url = "https://openrouter.ai/api/v1/chat/completions"
 

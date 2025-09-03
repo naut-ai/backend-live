@@ -8,7 +8,7 @@ import cloudinary.uploader
 import time
 from dotenv import load_dotenv
 import os
-from config import system_prompt, title_prompt, elevenlabs_url, did_url, ayesha_img_url, make_speech_friendly
+from config import system_prompt, title_prompt, elevenlabs_url, did_url, ayesha_img_url, make_speech_friendly, model_name, openrouter_url
 from litellm import completion
 
 app = Flask(__name__)
@@ -20,7 +20,7 @@ load_dotenv()
 cloud_name = os.getenv("CLOUD_NAME")
 cloudinary_api_key = os.getenv("CLOUDINARY_API_KEY")
 cloudinary_api_secret = os.getenv("CLOUDINARY_API_SECRET")
-# openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
 # elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
 # did_api_key = os.getenv("DID_API_KEY")
 # gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -65,25 +65,45 @@ def ask_avatar():
 
     try:
 
-        response = completion(
-        model="gemini/gemini-2.0-flash",  
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Topic: {user_input}"}
-        ],
-        api_key=api_credentials["geminiApiKey"]
-    )
-        message = response['choices'][0]['message']['content']
+        headers = {
+            "Authorization": f"Bearer {openrouter_api_key}",
+            "Content-Type": "application/json"
+        }
+        body = {
+            "model": model_name,
+            "messages": [{"role": "user", "content": system_prompt + f" Topic: {user_input}"}]
+        }
+        response = requests.post(openrouter_url, headers=headers, json=body)
+        print(response.json())
+        message = response.json()['choices'][0]['message']['content']
 
-        title_response = completion(
-        model="gemini/gemini-2.0-flash",  
-        messages=[
-            {"role": "system", "content": title_prompt},
-            {"role": "user", "content": f"Content: {message}"}
-        ],
-        api_key=api_credentials["geminiApiKey"]
-    )
-        title_message = title_response['choices'][0]['message']['content']
+        title_body = {
+            "model": model_name,
+            "messages": [{"role": "user", "content": title_prompt + f" Content: {message}"}]
+        }
+        title_response = requests.post(openrouter_url, headers=headers, json=title_body)
+        print(title_response.json())
+        title_message = title_response.json()['choices'][0]['message']['content']
+
+    #     response = completion(
+    #     model="gemini/gemini-2.5-flash-preview-04-17",  
+    #     messages=[
+    #         {"role": "system", "content": system_prompt},
+    #         {"role": "user", "content": f"Topic: {user_input}"}
+    #     ],
+    #     api_key=api_credentials["geminiApiKey"]
+    # )
+    #     message = response['choices'][0]['message']['content']
+
+    #     title_response = completion(
+    #     model="gemini/gemini-2.5-flash-preview-04-17",  
+    #     messages=[
+    #         {"role": "system", "content": title_prompt},
+    #         {"role": "user", "content": f"Content: {message}"}
+    #     ],
+    #     api_key=api_credentials["geminiApiKey"]
+    # )
+    #     title_message = title_response['choices'][0]['message']['content']
 
     except Exception as e:
         print(e)
@@ -110,11 +130,11 @@ def ask_avatar():
         }
 
         tts_response = requests.post(elevenlabs_url, headers=tts_headers, json=tts_data)
+        print(tts_response)
     except Exception as e:
         print(e)
         return jsonify({"message":"Error from ElevenLabs!"})
     
-    print(tts_response)
     audio_content = tts_response.content
     audio_base64 = base64.b64encode(audio_content).decode()
 
