@@ -204,7 +204,8 @@ def ask_avatar():
     "type": "audio",
     "audio_url": upload_result["secure_url"]
   },
-  "source_url": ayesha_img_url
+  "source_url": ayesha_img_url,
+      "streaming": False
 }
     try:
         did_response = requests.post(did_url, headers=did_headers, json=did_data)
