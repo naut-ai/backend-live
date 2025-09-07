@@ -36,7 +36,7 @@ video_obj = {}
 
 @app.before_serving
 def before_serving():
-    print("🚀 NautAI Server V2 Running...")
+    print("🚀 NautAI Server v2 Running...")
 
 @app.before_request
 def debug_origin():
