@@ -34,12 +34,9 @@ cloudinary.config(
 
 video_obj = {}
 
-@app.before_serving
-def before_serving():
-    print("🚀 NautAI Server v2 Running...")
-
 @app.before_request
 def debug_origin():
+    print("🚀 NautAI Server v2 Running...")
     print("Request Origin:", request.headers.get("Origin"))
 
 @app.route('/ask_video', methods=['POST'])
