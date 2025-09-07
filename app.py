@@ -8,8 +8,8 @@ import cloudinary.uploader
 import time
 from dotenv import load_dotenv
 import os
-from config import system_prompt, title_prompt, elevenlabs_url, did_url, ayesha_img_url, make_speech_friendly, model_name, openrouter_url
-from litellm import completion
+from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_speech_friendly, openrouter_url, generate_audio_sync
+import whisper
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://naut-demo.web.app", "http://localhost:5173"]}})
@@ -76,7 +76,7 @@ def ask_avatar():
             "Content-Type": "application/json"
         }
         body = {
-            "model": model_name,
+            "model": "mistralai/mistral-small-3.2-24b-instruct:free",
             "messages": [{"role": "user", "content": system_prompt + f" Topic: {user_input}"}]
         }
         response = requests.post(openrouter_url, headers=headers, json=body)
@@ -84,7 +84,7 @@ def ask_avatar():
         message = response.json()['choices'][0]['message']['content']
 
         title_body = {
-            "model": model_name,
+            "model": "mistralai/mistral-small-3.2-24b-instruct:free",
             "messages": [{"role": "user", "content": title_prompt + f" Content: {message}"}]
         }
         title_response = requests.post(openrouter_url, headers=headers, json=title_body)
@@ -113,7 +113,7 @@ def ask_avatar():
 
     except Exception as e:
         print(e)
-        return jsonify({"message":"Error from Gemini API!"})
+        return jsonify({"message":"Error from OpenRouter!"})
 
     video_obj["video_title"] = title_message.replace('"', "")
     video_obj["video_prompt"] = message
@@ -124,53 +124,72 @@ def ask_avatar():
 
     speech = make_speech_friendly(message)
 
-    # Step 2: Convert response to voice using ElevenLabs
-    try:
-        tts_headers = {
-            "xi-api-key": elevenlabs_api_key,
-            "Content-Type": "application/json",
-            "Accept": "audio/mpeg"
-        }
-        tts_data = {
-            "text": speech,
-            "voice_settings": {"stability": 0.5, "similarity_boost": 0.5}
-        }
+    # # Step 2: Convert response to voice using ElevenLabs
+    # try:
+    #     tts_headers = {
+    #         "xi-api-key": elevenlabs_api_key,
+    #         "Content-Type": "application/json",
+    #         "Accept": "audio/mpeg"
+    #     }
+    #     tts_data = {
+    #         "text": speech,
+    #         "voice_settings": {"stability": 0.5, "similarity_boost": 0.5}
+    #     }
 
-        print("🔹 ELEVENLABS URL:", elevenlabs_url)
-        print("🔹 API KEY:", api_credentials.get("elevenlabsApiKey"))
-        print("🔹 HEADERS:", tts_headers)
-        print("🔹 BODY:", tts_data)
+    #     print("🔹 ELEVENLABS URL:", elevenlabs_url)
+    #     print("🔹 API KEY:", api_credentials.get("elevenlabsApiKey"))
+    #     print("🔹 HEADERS:", tts_headers)
+    #     print("🔹 BODY:", tts_data)
 
-        tts_response = requests.post(elevenlabs_url, headers=tts_headers, json=tts_data)
+    #     tts_response = requests.post(elevenlabs_url, headers=tts_headers, json=tts_data)
 
-        # Log full response for debugging
-        print("🔹 STATUS:", tts_response.status_code)
-        print("🔹 RESPONSE:", tts_response.text)
+    #     # Log full response for debugging
+    #     print("🔹 STATUS:", tts_response.status_code)
+    #     print("🔹 RESPONSE:", tts_response.text)
 
-        if tts_response.status_code == 401:
-            return jsonify({"message": "Unauthorized - Invalid API Key"}), 401
+    #     if tts_response.status_code == 401:
+    #         return jsonify({"message": "Unauthorized - Invalid API Key"}), 401
 
-    except Exception as e:
-        print("🔹 Exception:", e)
-        return jsonify({"message": "Error from ElevenLabs!"}), 500
+    # except Exception as e:
+    #     print("🔹 Exception:", e)
+    #     return jsonify({"message": "Error from ElevenLabs!"}), 500
     
-    audio_content = tts_response.content
-    audio_base64 = base64.b64encode(audio_content).decode()
+    # audio_content = tts_response.content
+    # audio_base64 = base64.b64encode(audio_content).decode()
 
-    with open("output.mp3", "wb") as f:
-        f.write(base64.b64decode(audio_base64))
+    # with open("output.mp3", "wb") as f:
+    #     f.write(base64.b64decode(audio_base64))
+
+    try:
+        audio_name = generate_audio_sync(speech=speech)
+        print("Audio generated from EdgeTTS!")
+    except Exception as e:
+        print(e)
+        return jsonify({"message":"Error from EdgeTTS!"})
+
+    #TODO Transribe the audio from edgeTTS
+
+    # model = whisper.load_model("small")
+    # result = model.transcribe(audio_name)
+
+    # with open("subtitles.vtt", "w") as f:
+    #     print(result["text"])
+    #     f.write(result["text"])
+
+
+    # Step 3: Save audio to Cloudinary
 
     try:
         upload_result = cloudinary.uploader.upload(
-        "data:audio/mpeg;base64," + audio_base64,
+        audio_name,
         resource_type="video",  # audio is treated as video resource
-        format="mp3"
+        folder="naut-audios"
         )
     except Exception as e:
         print(e)
         return jsonify({"message":"Error from Cloudinary!"})
 
-    print("Got audio from Elevenlabs...")
+    print("Audio saved to cloudinary!")
     print("Audio URL:", upload_result["secure_url"])
 
     # Step 3: Generate talking avatar video with D-ID
@@ -226,6 +245,11 @@ def fetch_video():
         video_url = resdict.get("result_url")
         if video_url:
             print("Video link: ", video_url)
+            upload_result = cloudinary.uploader.upload(
+                            video_url,
+                            resource_type="video",  # audio is treated as video resource
+                            folder="naut-videos"
+            )
             video_obj["video_url"] = video_url
             video_obj["metadata"] = resdict
             break
