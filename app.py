@@ -12,7 +12,7 @@ from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_sp
 import whisper
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://naut-demo.web.app", "http://localhost:5173"]}})
+CORS(app, resources={r"/*": {"origins": ["https://naut-demo.web.app"]}})
 
 load_dotenv()
 
