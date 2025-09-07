@@ -69,7 +69,7 @@ def ask_avatar():
 
     try:
 
-        #Using openrouter instead of Gemini
+        #Using openrouter Mistral instead of Gemini
       
         headers = {
             "Authorization": f"Bearer {openrouter_api_key}",
