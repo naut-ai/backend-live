@@ -9,7 +9,6 @@ import time
 from dotenv import load_dotenv
 import os
 from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_speech_friendly, openrouter_url, generate_audio_sync
-import whisper
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://naut-demo.web.app", "http://localhost:5173"]}})
