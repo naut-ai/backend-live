@@ -208,6 +208,8 @@ def ask_avatar():
 }
     try:
         did_response = requests.post(did_url, headers=did_headers, json=did_data)
+        print("Status Code:", did_response.status_code)
+        print("Response Text:", did_response.text)
         video = did_response.json()
 
         print("Got video from D-ID...")
