@@ -11,7 +11,7 @@ import os
 from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_speech_friendly, openrouter_url, generate_audio_sync
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://naut-demo.web.app", "http://localhost:5173"]}})
+CORS(app)
 
 load_dotenv()
 
@@ -33,12 +33,9 @@ cloudinary.config(
 
 video_obj = {}
 
-@app.before_serving
-def before_serving():
-    print("🚀 NautAI Server V2 Running...")
-
 @app.before_request
 def debug_origin():
+    print("🚀 NautAI Server v2 Running...")
     print("Request Origin:", request.headers.get("Origin"))
 
 @app.route('/ask_video', methods=['POST'])
@@ -206,10 +203,13 @@ def ask_avatar():
     "type": "audio",
     "audio_url": upload_result["secure_url"]
   },
-  "source_url": ayesha_img_url
+  "source_url": ayesha_img_url,
+      "streaming": False
 }
     try:
         did_response = requests.post(did_url, headers=did_headers, json=did_data)
+        print("Status Code:", did_response.status_code)
+        print("Response Text:", did_response.text)
         video = did_response.json()
 
         print("Got video from D-ID...")
