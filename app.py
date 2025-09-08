@@ -210,7 +210,7 @@ def ask_avatar():
             {
                 "start_frame": 0,
                 "expression": "surprise",
-                "intensity": 1.0
+                "intensity": 0.5
             },
             {
                 "start_frame": 100,
@@ -220,7 +220,7 @@ def ask_avatar():
             {
                 "start_frame": 200,
                 "expression": "happy",
-                "intensity": 1.0
+                "intensity": 0.3
             }
         ],
         "transition_frames": 20
