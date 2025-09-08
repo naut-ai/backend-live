@@ -204,12 +204,34 @@ def ask_avatar():
     "audio_url": upload_result["secure_url"]
   },
   "source_url": ayesha_img_url,
-      "streaming": False
+  "config": {
+     "driver_expressions": {
+        "expressions": [
+            {
+                "start_frame": 0,
+                "expression": "surprise",
+                "intensity": 1.0
+            },
+            {
+                "start_frame": 100,
+                "expression": "neutral",
+                "intensity": 1.0
+            },
+            {
+                "start_frame": 200,
+                "expression": "happy",
+                "intensity": 1.0
+            }
+        ],
+        "transition_frames": 20
+    }
+  },
 }
     try:
         did_response = requests.post(did_url, headers=did_headers, json=did_data)
         print("Status Code:", did_response.status_code)
         print("Response Text:", did_response.text)
+        print(did_response)
         video = did_response.json()
 
         print("Got video from D-ID...")
@@ -239,29 +261,34 @@ def fetch_video():
         "accept": "application/json"
     }
     
-    while True:
-        response = requests.get(fetch_url, headers=headers)
-        resdict = json.loads(response.text)
-        print(resdict)
-        state = resdict.get("status")
-        print("Status:", state)
-        video_url = resdict.get("result_url")
-        if video_url:
-            print("Video link: ", video_url)
-            upload_result = cloudinary.uploader.upload(
-                            video_url,
-                            resource_type="video",  # audio is treated as video resource
-                            folder="naut-videos"
-            )
-            video_obj["video_url"] = video_url
-            video_obj["metadata"] = resdict
-            break
-        time.sleep(5)
-    
-    print("Fetched video successfully!")
-    print(video_obj)
+    try:
+        while True:
+            response = requests.get(fetch_url, headers=headers)
+            resdict = json.loads(response.text)
+            print(resdict)
+            state = resdict.get("status")
+            print("Status:", state)
+            video_url = resdict.get("result_url")
+            if video_url:
+                print("Video link: ", video_url)
+                upload_result = cloudinary.uploader.upload(
+                                video_url,
+                                resource_type="video",  # audio is treated as video resource
+                                folder="naut-videos"
+                )
+                print("Video saved to cloudinary!")
+                video_obj["video_url"] = upload_result["secure_url"]
+                video_obj["metadata"] = resdict
+                break
+            time.sleep(5)
+        
+        print("Fetched video successfully!")
+        print(video_obj)
 
-    return jsonify(video_obj)
+        return jsonify(video_obj)
+    except Exception as e:
+        print(e)
+        return jsonify({"message":"Video not found!"})
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000)

@@ -46,7 +46,7 @@ elevenlabs_url = f"https://api.elevenlabs.io/v1/text-to-speech/{elevenlabs_voice
 
 did_url = "https://api.d-id.com/talks"
 
-ayesha_img_url = "https://res.cloudinary.com/dvxt3ykbf/image/upload/v1753942461/g6tl0cqqlbbz8pg26vsk.png"
+ayesha_img_url = "https://res.cloudinary.com/dvxt3ykbf/image/upload/v1757295754/ayesha_vb2w5f.png"
 
 def generate_audio_sync(speech, voice="en-US-AriaNeural", filename="output.mp3"):
     """
