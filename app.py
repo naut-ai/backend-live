@@ -32,7 +32,7 @@ cloudinary.config(
   secure = True
 )
 
-vosk_model = Model("vosk-model-small-en-us-0.15")
+vosk_model = Model("models/vosk-model-small-en-us-0.15")
 
 video_obj = {}
 
