@@ -1,6 +1,10 @@
 import re
 import edge_tts
 import asyncio
+import json
+import wave
+from vosk import Model, KaldiRecognizer
+import soundfile as sf
 
 def make_speech_friendly(text: str) -> str:
     # Remove Markdown formatting
@@ -48,6 +52,11 @@ did_url = "https://api.d-id.com/talks"
 
 ayesha_img_url = "https://res.cloudinary.com/dvxt3ykbf/image/upload/v1757295754/ayesha_vb2w5f.png"
 
+def convert_mp3_to_wav(mp3_file, wav_file):
+    data, samplerate = sf.read(mp3_file)
+    sf.write(wav_file, data, samplerate)
+    return wav_file
+
 def generate_audio_sync(speech, voice="en-US-AriaNeural", filename="output.mp3"):
     """
     Generate speech audio synchronously using Edge TTS.
@@ -58,4 +67,60 @@ def generate_audio_sync(speech, voice="en-US-AriaNeural", filename="output.mp3")
 
     # Run the async function synchronously
     asyncio.run(_generate())
-    return filename
+    final = convert_mp3_to_wav(filename, "output.wav")
+    return final
+
+def generate_subtitles(audio_path, vtt_output_path):
+    # Load Vosk Model
+    model = Model("models/vosk-model-small-en-us-0.15")
+    wf = wave.open(audio_path, "rb")
+
+    # Validate audio format
+    if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getframerate() > 48000:
+        raise ValueError("Audio must be WAV mono PCM <= 48kHz")
+
+    rec = KaldiRecognizer(model, wf.getframerate())
+    rec.SetWords(True)
+
+    def format_time(seconds):
+        """Format seconds into hh:mm:ss.mmm for WebVTT"""
+        h = int(seconds // 3600)
+        m = int((seconds % 3600) // 60)
+        s = int(seconds % 60)
+        ms = int((seconds % 1) * 1000)
+        return f"{h:02}:{m:02}:{s:02}.{ms:03}"
+
+    # Prepare VTT file
+    with open(vtt_output_path, "w", encoding="utf-8") as vtt:
+        vtt.write("WEBVTT\n\n")
+        index = 1
+
+        # Process audio chunks
+        while True:
+            data = wf.readframes(4000)
+            if len(data) == 0:
+                break
+
+            if rec.AcceptWaveform(data):
+                result = json.loads(rec.Result())
+                if "result" in result:
+                    for word in result["result"]:
+                        start = word["start"]
+                        end = word["end"]
+                        text = word["word"]
+                        vtt.write(f"{format_time(start)} --> {format_time(end)}\n{text}\n\n")
+                        index += 1
+
+        # ✅ PROCESS FINAL BUFFER TO AVOID MISSING ENDING
+        final_result = json.loads(rec.FinalResult())
+        if "result" in final_result:
+            for word in final_result["result"]:
+                start = word["start"]
+                end = word["end"]
+                text = word["word"]
+                vtt.write(f"{format_time(start)} --> {format_time(end)}\n{text}\n\n")
+                index += 1
+
+    wf.close()
+    print(f"✅ Subtitles saved as {vtt_output_path}")
+    return vtt_output_path

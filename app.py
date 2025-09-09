@@ -8,7 +8,7 @@ import cloudinary.uploader
 import time
 from dotenv import load_dotenv
 import os
-from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_speech_friendly, openrouter_url, generate_audio_sync
+from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_speech_friendly, openrouter_url, generate_audio_sync, generate_subtitles
 
 app = Flask(__name__)
 CORS(app)
@@ -167,30 +167,41 @@ def ask_avatar():
         print(e)
         return jsonify({"message":"Error from EdgeTTS!"})
 
-    #TODO Transribe the audio from edgeTTS
-
-    # model = whisper.load_model("small")
-    # result = model.transcribe(audio_name)
-
-    # with open("subtitles.vtt", "w") as f:
-    #     print(result["text"])
-    #     f.write(result["text"])
-
-
+    try:
+        subtitle_name = generate_subtitles("output.wav", "subtitles.vtt")
+        print("Subtitles generated from Vrok!")
+    except Exception as e:
+        print(e)
+        return jsonify({"message":"Error from Vrok!"})
     # Step 3: Save audio to Cloudinary
 
     try:
-        upload_result = cloudinary.uploader.upload(
+        audio_upload_result = cloudinary.uploader.upload(
         audio_name,
         resource_type="video",  # audio is treated as video resource
         folder="naut-audios"
         )
     except Exception as e:
         print(e)
-        return jsonify({"message":"Error from Cloudinary!"})
+        return jsonify({"message":"Error from Cloudinary Audio!"})
 
     print("Audio saved to cloudinary!")
-    print("Audio URL:", upload_result["secure_url"])
+    print("Audio URL:", audio_upload_result["secure_url"])
+
+    try:
+        subtitles_upload_result = cloudinary.uploader.upload(
+        subtitle_name,
+        resource_type="raw",
+        folder="naut-subtitles"
+        )
+    except Exception as e:
+        print(e)
+        return jsonify({"message":"Error from Cloudinary Subtitles!"})
+
+    print("Subtitles saved to cloudinary!")
+    print("Subtitles URL:", subtitles_upload_result["secure_url"])
+
+    video_obj["subtitle_url"] = subtitles_upload_result["secure_url"]
 
     # Step 3: Generate talking avatar video with D-ID
     did_headers = {
@@ -201,7 +212,7 @@ def ask_avatar():
     did_data =  {
   "script": {
     "type": "audio",
-    "audio_url": upload_result["secure_url"]
+    "audio_url": audio_upload_result["secure_url"]
   },
   "source_url": ayesha_img_url,
   "config": {
@@ -210,7 +221,7 @@ def ask_avatar():
             {
                 "start_frame": 0,
                 "expression": "surprise",
-                "intensity": 0.5
+                "intensity": 0.3
             },
             {
                 "start_frame": 100,
