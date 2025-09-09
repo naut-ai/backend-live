@@ -9,6 +9,7 @@ import time
 from dotenv import load_dotenv
 import os
 from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_speech_friendly, openrouter_url, generate_audio_sync, generate_subtitles
+from vosk import Model
 
 app = Flask(__name__)
 CORS(app)
@@ -30,6 +31,8 @@ cloudinary.config(
   api_secret = cloudinary_api_secret,
   secure = True
 )
+
+vosk_model = Model("vosk-model-small-en-us-0.15")
 
 video_obj = {}
 
@@ -168,7 +171,7 @@ def ask_avatar():
         return jsonify({"message":"Error from EdgeTTS!"})
 
     try:
-        subtitle_name = generate_subtitles("output.wav", "subtitles.vtt")
+        subtitle_name = generate_subtitles("output.wav", "subtitles.vtt", vosk_model)
         print("Subtitles generated from Vrok!")
     except Exception as e:
         print(e)

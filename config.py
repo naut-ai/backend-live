@@ -3,7 +3,7 @@ import edge_tts
 import asyncio
 import json
 import wave
-from vosk import Model, KaldiRecognizer
+from vosk import KaldiRecognizer
 import soundfile as sf
 
 def make_speech_friendly(text: str) -> str:
@@ -70,9 +70,7 @@ def generate_audio_sync(speech, voice="en-US-AriaNeural", filename="output.mp3")
     final = convert_mp3_to_wav(filename, "output.wav")
     return final
 
-def generate_subtitles(audio_path, vtt_output_path):
-    # Load Vosk Model
-    model = Model("models/vosk-model-small-en-us-0.15")
+def generate_subtitles(audio_path, vtt_output_path, model):
     wf = wave.open(audio_path, "rb")
 
     # Validate audio format
