@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import os
 from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_speech_friendly, openrouter_url, generate_audio_sync, generate_subtitles
 from vosk import Model
+import assemblyai as aai
 
 app = Flask(__name__)
 CORS(app)
@@ -22,7 +23,7 @@ cloudinary_api_key = os.getenv("CLOUDINARY_API_KEY")
 cloudinary_api_secret = os.getenv("CLOUDINARY_API_SECRET")
 openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
 elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
-# did_api_key = os.getenv("DID_API_KEY")
+aai.settings.api_key = os.getenv("ASSEMBLY_API_KEY")
 # gemini_api_key = os.getenv("GEMINI_API_KEY")
 
 cloudinary.config(
@@ -49,31 +50,8 @@ def ask_avatar():
     print(api_credentials)
     print("Got prompt from user...")
 
-    # # Step 1: Get response from LLM
-    # headers = {
-    #     "Authorization": f"Bearer {openrouter_api_key}",
-    #     "Content-Type": "application/json"
-    # }
-    # body = {
-    #     "model": model_name,
-    #     "messages": [{"role": "user", "content": system_prompt + f" Topic: {user_input}"}]
-    # }
-    # response = requests.post(openrouter_url, headers=headers, json=body)
-    # print(response.json())
-    # message = response.json()['choices'][0]['message']['content']
-
-    # title_body = {
-    #     "model": model_name,
-    #     "messages": [{"role": "user", "content": title_prompt + f" Content: {message}"}]
-    # }
-    # title_response = requests.post(openrouter_url, headers=headers, json=title_body)
-    # print(title_response.json())
-    # title_message = title_response.json()['choices'][0]['message']['content']
-
+    #Step 1: Get response from LLM
     try:
-
-        #Using openrouter Mistral instead of Gemini
-      
         headers = {
             "Authorization": f"Bearer {openrouter_api_key}",
             "Content-Type": "application/json"
@@ -86,6 +64,8 @@ def ask_avatar():
         print(response.json())
         message = response.json()['choices'][0]['message']['content']
 
+        print("✅ Script generated from LLM!")
+
         title_body = {
             "model": "mistralai/mistral-small-3.2-24b-instruct:free",
             "messages": [{"role": "user", "content": title_prompt + f" Content: {message}"}]
@@ -94,89 +74,38 @@ def ask_avatar():
         print(title_response.json())
         title_message = title_response.json()['choices'][0]['message']['content']
 
-    #     response = completion(
-    #     model="gemini/gemini-2.5-flash-preview-04-17",  
-    #     messages=[
-    #         {"role": "system", "content": system_prompt},
-    #         {"role": "user", "content": f"Topic: {user_input}"}
-    #     ],
-    #     api_key=api_credentials["geminiApiKey"]
-    # )
-    #     message = response['choices'][0]['message']['content']
-
-    #     title_response = completion(
-    #     model="gemini/gemini-2.5-flash-preview-04-17",  
-    #     messages=[
-    #         {"role": "system", "content": title_prompt},
-    #         {"role": "user", "content": f"Content: {message}"}
-    #     ],
-    #     api_key=api_credentials["geminiApiKey"]
-    # )
-    #     title_message = title_response['choices'][0]['message']['content']
+        print("✅ Title generated from LLM!")
 
     except Exception as e:
         print(e)
         return jsonify({"message":"Error from OpenRouter!"})
 
     video_obj["video_title"] = title_message.replace('"', "")
-    video_obj["video_prompt"] = message
-
-    print("Got script from LLM...")
-    print(video_obj["video_title"])
-    print(video_obj["video_prompt"])
+    video_obj["video_content"] = message
 
     speech = make_speech_friendly(message)
 
-    # # Step 2: Convert response to voice using ElevenLabs
-    # try:
-    #     tts_headers = {
-    #         "xi-api-key": elevenlabs_api_key,
-    #         "Content-Type": "application/json",
-    #         "Accept": "audio/mpeg"
-    #     }
-    #     tts_data = {
-    #         "text": speech,
-    #         "voice_settings": {"stability": 0.5, "similarity_boost": 0.5}
-    #     }
+    print("✅ Speech generated from script!")
 
-    #     print("🔹 ELEVENLABS URL:", elevenlabs_url)
-    #     print("🔹 API KEY:", api_credentials.get("elevenlabsApiKey"))
-    #     print("🔹 HEADERS:", tts_headers)
-    #     print("🔹 BODY:", tts_data)
-
-    #     tts_response = requests.post(elevenlabs_url, headers=tts_headers, json=tts_data)
-
-    #     # Log full response for debugging
-    #     print("🔹 STATUS:", tts_response.status_code)
-    #     print("🔹 RESPONSE:", tts_response.text)
-
-    #     if tts_response.status_code == 401:
-    #         return jsonify({"message": "Unauthorized - Invalid API Key"}), 401
-
-    # except Exception as e:
-    #     print("🔹 Exception:", e)
-    #     return jsonify({"message": "Error from ElevenLabs!"}), 500
-    
-    # audio_content = tts_response.content
-    # audio_base64 = base64.b64encode(audio_content).decode()
-
-    # with open("output.mp3", "wb") as f:
-    #     f.write(base64.b64decode(audio_base64))
+    #Step 2: Convert Script to Voiceover using EdgeTTS
 
     try:
         audio_name = generate_audio_sync(speech=speech)
-        print("Audio generated from EdgeTTS!")
+        print("✅ Voiceover generated from EdgeTTS!")
     except Exception as e:
         print(e)
         return jsonify({"message":"Error from EdgeTTS!"})
 
+    #Step 3: Create subtitles for voiceover
+
     try:
-        subtitle_name = generate_subtitles("output.wav", "subtitles.vtt", vosk_model)
-        print("Subtitles generated from Vrok!")
+        subtitle_name = generate_subtitles("output.wav")
+        print("✅ Subtitles generated from Assembly AI!")
     except Exception as e:
         print(e)
         return jsonify({"message":"Error from Vrok!"})
-    # Step 3: Save audio to Cloudinary
+    
+    # Step 4: Save audio and subtitles to Cloudinary
 
     try:
         audio_upload_result = cloudinary.uploader.upload(
@@ -188,7 +117,7 @@ def ask_avatar():
         print(e)
         return jsonify({"message":"Error from Cloudinary Audio!"})
 
-    print("Audio saved to cloudinary!")
+    print("✅ Voiceover saved to Cloudinary!")
     print("Audio URL:", audio_upload_result["secure_url"])
 
     try:
@@ -201,12 +130,13 @@ def ask_avatar():
         print(e)
         return jsonify({"message":"Error from Cloudinary Subtitles!"})
 
-    print("Subtitles saved to cloudinary!")
+    print("✅ Subtitles saved to Cloudinary!")
     print("Subtitles URL:", subtitles_upload_result["secure_url"])
 
     video_obj["subtitle_url"] = subtitles_upload_result["secure_url"]
 
-    # Step 3: Generate talking avatar video with D-ID
+    # Step 5: Generate talking avatar video with D-ID
+    
     did_headers = {
         "Authorization": f"Basic {api_credentials["didApiKey"]}",
         "Content-Type": "application/json"
@@ -224,7 +154,7 @@ def ask_avatar():
             {
                 "start_frame": 0,
                 "expression": "surprise",
-                "intensity": 0.3
+                "intensity": 0.2
             },
             {
                 "start_frame": 100,
@@ -247,19 +177,16 @@ def ask_avatar():
         print("Response Text:", did_response.text)
         print(did_response)
         video = did_response.json()
-
-        print("Got video from D-ID...")
         
         video_obj["metadata"] = video
-
-        print(video_obj["metadata"])
-
         video_obj["video_id"] = video["id"]
-        print(video_obj["video_id"])
+
+        print("✅ Final Video generated from D-ID!")
     except Exception as e:
         print(e)
         return jsonify({"message":"DID API Crendentials expired!"})
 
+    #Step 6: Return the Video ID to Frontend
     return jsonify({"video_id":video_obj["video_id"]})
 
 @app.route('/get_video', methods=['POST'])
@@ -279,24 +206,25 @@ def fetch_video():
         while True:
             response = requests.get(fetch_url, headers=headers)
             resdict = json.loads(response.text)
-            print(resdict)
+            print("Fetching video from D-ID...")
             state = resdict.get("status")
             print("Status:", state)
             video_url = resdict.get("result_url")
             if video_url:
-                print("Video link: ", video_url)
+                print("✅ Fetched video from D-ID!")
                 upload_result = cloudinary.uploader.upload(
                                 video_url,
-                                resource_type="video",  # audio is treated as video resource
+                                resource_type="video",
                                 folder="naut-videos"
                 )
-                print("Video saved to cloudinary!")
+                print("✅ Video saved to Cloudinary!")
+                print("Video link: ", upload_result["secure_url"])
                 video_obj["video_url"] = upload_result["secure_url"]
                 video_obj["metadata"] = resdict
                 break
             time.sleep(5)
         
-        print("Fetched video successfully!")
+        print("✅ Final Video Object:")
         print(video_obj)
 
         return jsonify(video_obj)
