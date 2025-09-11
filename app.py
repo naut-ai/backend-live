@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import requests
-import base64
 from flask_cors import CORS
 import json
 import cloudinary
@@ -9,7 +8,6 @@ import time
 from dotenv import load_dotenv
 import os
 from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_speech_friendly, openrouter_url, generate_audio_sync, generate_subtitles
-from vosk import Model
 import assemblyai as aai
 
 app = Flask(__name__)
@@ -23,7 +21,7 @@ cloudinary_api_key = os.getenv("CLOUDINARY_API_KEY")
 cloudinary_api_secret = os.getenv("CLOUDINARY_API_SECRET")
 openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
 elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
-aai.settings.api_key = os.getenv("ASSEMBLY_API_KEY")
+aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
 # gemini_api_key = os.getenv("GEMINI_API_KEY")
 
 cloudinary.config(
@@ -32,8 +30,6 @@ cloudinary.config(
   api_secret = cloudinary_api_secret,
   secure = True
 )
-
-vosk_model = Model("models/vosk-model-small-en-us-0.15")
 
 video_obj = {}
 
@@ -99,7 +95,7 @@ def ask_avatar():
     #Step 3: Create subtitles for voiceover
 
     try:
-        subtitle_name = generate_subtitles("output.wav")
+        subtitle_name = generate_subtitles("output.mp3")
         print("✅ Subtitles generated from Assembly AI!")
     except Exception as e:
         print(e)

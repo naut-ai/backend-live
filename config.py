@@ -59,7 +59,10 @@ def generate_audio_sync(speech, voice="en-US-AriaNeural", filename="output.mp3")
 
 def generate_subtitles(audio_path):
     transcriber = aai.Transcriber()
-    transcript = transcriber.transcribe(audio_path, config=aai.TranscriptionConfig(vtt=True))
+    transcript = transcriber.transcribe(audio_path)
+
+    if transcript.status == aai.TranscriptStatus.error:
+        print("❌ Error:", transcript.error)
 
     with open("subtitles.vtt", "w", encoding="utf-8") as f:
         f.write(transcript.export_subtitles_vtt())
