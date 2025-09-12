@@ -2,6 +2,8 @@ import re
 import edge_tts
 import asyncio
 import assemblyai as aai
+import time
+import requests
 
 def make_speech_friendly(text: str) -> str:
     # Remove Markdown formatting
@@ -49,6 +51,8 @@ did_url = "https://api.d-id.com/talks"
 
 ayesha_img_url = "https://res.cloudinary.com/dvxt3ykbf/image/upload/v1757295754/ayesha_vb2w5f.png"
 
+HEYGEN_API_KEY = "ZWQyMWRjZGY3NzIxNGRlYWFmYTMyNmU1NjRlN2UzZTEtMTc1Mzk0NTUxMg=="
+
 def generate_audio_sync(speech, voice="en-US-AriaNeural", filename="output.mp3"):
     async def _generate():
         tts = edge_tts.Communicate(text=speech, voice=voice)
@@ -68,3 +72,64 @@ def generate_subtitles(audio_path):
         f.write(transcript.export_subtitles_vtt())
 
     return "subtitles.vtt"
+
+def fetch_created_video(api_key, video_id):
+    status_url = f"https://api.heygen.com/v1/video_status.get?video_id={video_id}"
+    headers = {
+    "X-Api-Key": f"{api_key}",
+    "Accept": "application/json"
+    }
+    while True:
+        status_res = requests.get(status_url, headers=headers)
+        print(status_res)
+        if status_res.status_code == 200:
+            data = status_res.json()["data"]
+            print("video-status:", data["status"])
+            if data["status"] == "completed":
+                print("video-url", data["video_url"])
+                print("✅ Video fetched successfully!")
+                return {"video_url":data["video_url"], "video_data":data}
+        time.sleep(5)
+
+def create_heygen_video(api_key, voiceover):
+    url = "https://api.heygen.com/v2/video/generate"
+
+    headers = {
+    "X-Api-Key": f"{api_key}",
+    "Accept": "application/json"
+    }
+
+    data = {
+    "video_inputs": [
+        {
+        "character": {
+            "type": "avatar",
+            "avatar_id": "94e6212fc6bb4ea19cf785939f0d3af6",
+            "avatar_style": "normal"
+        },
+        "voice": {
+            "type": "audio",
+            "audio_url":voiceover
+        },
+        }
+    ],
+    "dimension": {
+        "width": 1280,
+        "height": 720
+    }
+    }
+
+    response = requests.post(url, headers=headers, json=data)
+    print(response)
+
+    if response.status_code == 200:
+        video_info = response.json()
+        print("✅ Video request accepted:", video_info)
+        
+        video_id = video_info["data"]["video_id"]
+        print("✅ Video ID:", video_id)
+
+        return {"video_id":video_id, "video_data":video_info["data"]}
+    
+    else:
+        print("❌ Error from HeyGen:", response.text)

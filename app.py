@@ -1,13 +1,11 @@
 from flask import Flask, request, jsonify
 import requests
 from flask_cors import CORS
-import json
 import cloudinary
 import cloudinary.uploader
-import time
 from dotenv import load_dotenv
 import os
-from config import system_prompt, title_prompt, did_url, ayesha_img_url, make_speech_friendly, openrouter_url, generate_audio_sync, generate_subtitles
+from config import system_prompt, title_prompt, make_speech_friendly, openrouter_url, generate_audio_sync, generate_subtitles, create_heygen_video, fetch_created_video
 import assemblyai as aai
 
 app = Flask(__name__)
@@ -35,7 +33,7 @@ video_obj = {}
 
 @app.before_request
 def debug_origin():
-    print("🚀 NautAI Server v2 Running...")
+    print("🚀 NautAI Server v3 Running...")
     print("Request Origin:", request.headers.get("Origin"))
 
 @app.route('/ask_video', methods=['POST'])
@@ -43,8 +41,6 @@ def ask_avatar():
     print("user hit the url")
     user_input = request.json['question']
     api_credentials = request.json['apiKeys']
-    print(api_credentials)
-    print("Got prompt from user...")
 
     #Step 1: Get response from LLM
     try:
@@ -133,54 +129,17 @@ def ask_avatar():
 
     # Step 5: Generate talking avatar video with D-ID
     
-    did_headers = {
-        "Authorization": f"Basic {api_credentials["didApiKey"]}",
-        "Content-Type": "application/json"
-    }
-   
-    did_data =  {
-  "script": {
-    "type": "audio",
-    "audio_url": audio_upload_result["secure_url"]
-  },
-  "source_url": ayesha_img_url,
-  "config": {
-     "driver_expressions": {
-        "expressions": [
-            {
-                "start_frame": 0,
-                "expression": "surprise",
-                "intensity": 0.2
-            },
-            {
-                "start_frame": 100,
-                "expression": "neutral",
-                "intensity": 1.0
-            },
-            {
-                "start_frame": 200,
-                "expression": "happy",
-                "intensity": 0.3
-            }
-        ],
-        "transition_frames": 20
-    }
-  },
-}
     try:
-        did_response = requests.post(did_url, headers=did_headers, json=did_data)
-        print("Status Code:", did_response.status_code)
-        print("Response Text:", did_response.text)
-        print(did_response)
-        video = did_response.json()
+        heygen_response = create_heygen_video(api_key=api_credentials["heygenApiKey"], voiceover=audio_upload_result["secure_url"])
         
-        video_obj["metadata"] = video
-        video_obj["video_id"] = video["id"]
+        video_obj["metadata"] = heygen_response["video_data"]
+        video_obj["video_id"] = heygen_response["video_id"]
 
-        print("✅ Final Video generated from D-ID!")
+        print("✅ Final Video generated from HeyGen!")
+    
     except Exception as e:
         print(e)
-        return jsonify({"message":"DID API Crendentials expired!"})
+        return jsonify({"message":"HeyGen API Crendentials expired!"})
 
     #Step 6: Return the Video ID to Frontend
     return jsonify({"video_id":video_obj["video_id"]})
@@ -189,37 +148,20 @@ def ask_avatar():
 def fetch_video():
     api_credentials = request.json['apiKeys']
     talk_id = request.json['talk_id']
-    print(api_credentials)
-    fetch_url = f"https://api.d-id.com/talks/{talk_id}"
-
-    headers = {
-        "Authorization": f"Basic {api_credentials["didApiKey"]}",
-        "Content-Type": "application/json",
-        "accept": "application/json"
-    }
     
     try:
-        while True:
-            response = requests.get(fetch_url, headers=headers)
-            resdict = json.loads(response.text)
-            print("Fetching video from D-ID...")
-            state = resdict.get("status")
-            print("Status:", state)
-            video_url = resdict.get("result_url")
-            if video_url:
-                print("✅ Fetched video from D-ID!")
-                upload_result = cloudinary.uploader.upload(
-                                video_url,
-                                resource_type="video",
-                                folder="naut-videos"
-                )
-                print("✅ Video saved to Cloudinary!")
-                print("Video link: ", upload_result["secure_url"])
-                video_obj["video_url"] = upload_result["secure_url"]
-                video_obj["metadata"] = resdict
-                break
-            time.sleep(5)
-        
+        response = fetch_created_video(api_key=api_credentials["heygenApiKey"], video_id=talk_id)
+        print("✅ Fetched video from HeyGen!")
+        upload_result = cloudinary.uploader.upload(
+                                    response["video_url"],
+                                    resource_type="video",
+                                    folder="naut-videos"
+                    )
+        print("✅ Video saved to Cloudinary!")
+        print("Video link: ", upload_result["secure_url"])
+        video_obj["metadata"] = response["video_data"]
+        video_obj["video_url"] = upload_result["secure_url"]
+            
         print("✅ Final Video Object:")
         print(video_obj)
 
