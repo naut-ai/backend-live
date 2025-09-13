@@ -44,15 +44,6 @@ model_name = "mistralai/mistral-small-3.2-24b-instruct:free"
 
 openrouter_url = "https://openrouter.ai/api/v1/chat/completions"
 
-elevenlabs_voice_id = "NaKPQmdr7mMxXuXrNeFC"
-elevenlabs_url = f"https://api.elevenlabs.io/v1/text-to-speech/{elevenlabs_voice_id}"
-
-did_url = "https://api.d-id.com/talks"
-
-ayesha_img_url = "https://res.cloudinary.com/dvxt3ykbf/image/upload/v1757295754/ayesha_vb2w5f.png"
-
-HEYGEN_API_KEY = "ZWQyMWRjZGY3NzIxNGRlYWFmYTMyNmU1NjRlN2UzZTEtMTc1Mzk0NTUxMg=="
-
 def generate_audio_sync(speech, voice="en-US-AriaNeural", filename="output.mp3"):
     async def _generate():
         tts = edge_tts.Communicate(text=speech, voice=voice)
