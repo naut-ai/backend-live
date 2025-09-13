@@ -78,7 +78,7 @@ def fetch_created_video(api_key, video_id):
                 print("video-url", data["video_url"])
                 print("✅ Video fetched successfully!")
                 return {"video_url":data["video_url"], "video_data":data}
-        time.sleep(5)
+        time.sleep(10)
 
 def create_heygen_video(api_key, voiceover):
     url = "https://api.heygen.com/v2/video/generate"
