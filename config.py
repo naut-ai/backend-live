@@ -72,10 +72,8 @@ def fetch_created_video(api_key, video_id):
     }
     while True:
         status_res = requests.get(status_url, headers=headers)
-        print(status_res)
         if status_res.status_code == 200:
             data = status_res.json()["data"]
-            print("video-status:", data["status"])
             if data["status"] == "completed":
                 print("video-url", data["video_url"])
                 print("✅ Video fetched successfully!")
