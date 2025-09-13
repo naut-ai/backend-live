@@ -10,7 +10,7 @@ import assemblyai as aai
 
 app = Flask(__name__)
 
-CORS(app, origins=["https://naut-demo.web.app"])
+CORS(app)
 
 load_dotenv()
 
