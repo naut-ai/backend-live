@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import requests
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import cloudinary
 import cloudinary.uploader
 from dotenv import load_dotenv
@@ -38,7 +38,6 @@ def debug_origin():
     print("Request Origin:", request.headers.get("Origin"))
 
 @app.route('/ask_video', methods=['POST'])
-@cross_origin(origins="https://naut-demo.web.app")
 def ask_avatar():
     print("user hit the url")
     user_input = request.json['question']
@@ -147,7 +146,6 @@ def ask_avatar():
     return jsonify({"video_id":video_obj["video_id"]})
 
 @app.route('/get_video', methods=['POST'])
-@cross_origin(origins="https://naut-demo.web.app")
 def fetch_video():
     api_credentials = request.json['apiKeys']
     talk_id = request.json['talk_id']
