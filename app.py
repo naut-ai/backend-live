@@ -51,7 +51,7 @@ def ask_avatar():
             "Content-Type": "application/json"
         }
         body = {
-            "model": "mistralai/mistral-small-3.2-24b-instruct:free",
+            "model": "mistralai/mistral-small-24b-instruct-2501:free",
             "messages": [{"role": "user", "content": system_prompt + f" Topic: {user_input}"}]
         }
         response = requests.post(openrouter_url, headers=headers, json=body)
@@ -61,7 +61,7 @@ def ask_avatar():
         print("✅ Script generated from LLM!")
 
         title_body = {
-            "model": "mistralai/mistral-small-3.2-24b-instruct:free",
+            "model": "mistralai/mistral-small-24b-instruct-2501:free",
             "messages": [{"role": "user", "content": title_prompt + f" Content: {message}"}]
         }
         title_response = requests.post(openrouter_url, headers=headers, json=title_body)
