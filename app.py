@@ -152,28 +152,27 @@ def fetch_video():
         response = fetch_created_video(api_key=api_credentials["heygenApiKey"], video_id=talk_id)
         if response["status"] == "pending":
             return jsonify({"message":"Video is still processing..."})
-        if response["status"] == "expired":
+        elif response["status"] == "expired":
             return jsonify({"message":"API Credentials Expired!"})
-        if response["status"] == "error":
+        elif response["status"] == "error":
             return jsonify({"message":"Error from HeyGen!"})    
-        print("✅ Fetched video from HeyGen!")
-        upload_result = cloudinary.uploader.upload(
-                                    response["video_url"],
-                                    resource_type="video",
-                                    folder="naut-videos"
-                    )
-        print("✅ Video saved to Cloudinary!")
-        print("Video link: ", upload_result["secure_url"])
+        else:
+            print("✅ Fetched video from HeyGen!")
+            upload_result = cloudinary.uploader.upload(
+                                        response["video_url"],
+                                        resource_type="video",
+                                        folder="naut-videos"
+                        )
+            print("✅ Video saved to Cloudinary!")
+            video_obj["metadata"] = response["video_data"]
+            video_obj["video_url"] = upload_result["secure_url"]
+            print("✅ Final Video Object:")
+            print(video_obj)
+            return jsonify(video_obj)
 
     except Exception as e:
         print(e)
         return jsonify({"message":"Video not found!"})
-    
-    video_obj["metadata"] = response["video_data"]
-    video_obj["video_url"] = upload_result["secure_url"]
-    print("✅ Final Video Object:")
-    print(video_obj)
-    return jsonify(video_obj)
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000)
