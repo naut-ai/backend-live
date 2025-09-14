@@ -37,13 +37,6 @@ def debug_origin():
     print("🚀 NautAI Server v3 Running...")
     print("Request Origin:", request.headers.get("Origin"))
 
-@app.after_request
-def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "https://naut-demo.web.app"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    return response
-
 @app.route('/ask_video', methods=['POST'])
 def ask_avatar():
     print("user hit the url")
