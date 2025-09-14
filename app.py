@@ -10,7 +10,7 @@ import assemblyai as aai
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "https://naut-demo.web.app"}})
+CORS(app, supports_credentials=True, origins=["https://naut-demo.web.app"])
 
 load_dotenv()
 
@@ -45,7 +45,6 @@ def add_cors_headers(response):
     return response
 
 @app.route('/ask_video', methods=['POST'])
-@cross_origin(origins=["https://naut-demo.web.app"])
 def ask_avatar():
     print("user hit the url")
     user_input = request.json['question']
@@ -154,7 +153,6 @@ def ask_avatar():
     return jsonify({"video_id":video_obj["video_id"]})
 
 @app.route('/get_video', methods=['POST'])
-@cross_origin(origins=["https://naut-demo.web.app"])
 def fetch_video():
     api_credentials = request.json['apiKeys']
     talk_id = request.json['talk_id']
