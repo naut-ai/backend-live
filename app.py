@@ -144,12 +144,12 @@ def ask_avatar():
     return jsonify({"video_id":video_obj["video_id"]})
 
 @app.route('/get_video', methods=['POST'])
-def fetch_video():
+async def fetch_video():
     api_credentials = request.json['apiKeys']
     talk_id = request.json['talk_id']
     
     try:
-        response = fetch_created_video(api_key=api_credentials["heygenApiKey"], video_id=talk_id)
+        response = await fetch_created_video(api_key=api_credentials["heygenApiKey"], video_id=talk_id)
         print("✅ Fetched video from HeyGen!")
         upload_result = cloudinary.uploader.upload(
                                     response["video_url"],
