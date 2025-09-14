@@ -64,13 +64,13 @@ def generate_subtitles(audio_path):
 
     return "subtitles.vtt"
 
-async def fetch_created_video(api_key, video_id):
+def fetch_created_video(api_key, video_id):
     status_url = f"https://api.heygen.com/v1/video_status.get?video_id={video_id}"
     headers = {
     "X-Api-Key": f"{api_key}",
     "Accept": "application/json"
     }
-    status_res = await requests.get(status_url, headers=headers)
+    status_res = requests.get(status_url, headers=headers)
     while True:
         if status_res.status_code == 200:
             data = status_res.json()["data"]
