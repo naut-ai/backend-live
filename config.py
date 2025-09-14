@@ -77,7 +77,7 @@ def fetch_created_video(api_key, video_id):
         if data["status"] == "completed":
             print("video-url", data["video_url"])
             print("✅ Video fetched successfully!")
-            return {"video_url":data["video_url"], "video_data":data}
+            return {"video_url":data["video_url"], "video_data":data, "status":"completed"}
         elif data["status"] == "failed":
             return {"status":"expired"}
         else:

@@ -155,8 +155,8 @@ def fetch_video():
         elif response["status"] == "expired":
             return jsonify({"message":"API Credentials Expired!"})
         elif response["status"] == "error":
-            return jsonify({"message":"Error from HeyGen!"})    
-        else:
+            return jsonify({"message":"Error from HeyGen!"})
+        elif response["status"] == "completed":
             print("✅ Fetched video from HeyGen!")
             upload_result = cloudinary.uploader.upload(
                                         response["video_url"],
@@ -169,6 +169,8 @@ def fetch_video():
             print("✅ Final Video Object:")
             print(video_obj)
             return jsonify(video_obj)
+        else:
+            return jsonify({"message":"Unkown error while fetching!"})
 
     except Exception as e:
         print(e)
