@@ -37,13 +37,6 @@ def debug_origin():
     print("🚀 NautAI Server v3 Running...")
     print("Request Origin:", request.headers.get("Origin"))
 
-@app.after_request
-def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "https://naut-demo.web.app"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    return response
-
 @app.route('/ask_video', methods=['POST'])
 def ask_avatar():
     print("user hit the url")
@@ -139,17 +132,15 @@ def ask_avatar():
     
     try:
         heygen_response = create_heygen_video(api_key=api_credentials["heygenApiKey"], voiceover=audio_upload_result["secure_url"])
-        
-        video_obj["metadata"] = heygen_response["video_data"]
-        video_obj["video_id"] = heygen_response["video_id"]
-
         print("✅ Final Video generated from HeyGen!")
-    
     except Exception as e:
         print(e)
         return jsonify({"message":"HeyGen API Crendentials expired!"})
 
+    video_obj["video_id"] = heygen_response["video_id"]
+
     #Step 6: Return the Video ID to Frontend
+    print(video_obj)
     return jsonify({"video_id":video_obj["video_id"]})
 
 @app.route('/get_video', methods=['POST'])
@@ -167,16 +158,16 @@ def fetch_video():
                     )
         print("✅ Video saved to Cloudinary!")
         print("Video link: ", upload_result["secure_url"])
-        video_obj["metadata"] = response["video_data"]
-        video_obj["video_url"] = upload_result["secure_url"]
-            
-        print("✅ Final Video Object:")
-        print(video_obj)
 
-        return jsonify(video_obj)
     except Exception as e:
         print(e)
         return jsonify({"message":"Video not found!"})
+    
+    video_obj["metadata"] = response["video_data"]
+    video_obj["video_url"] = upload_result["secure_url"]
+    print("✅ Final Video Object:")
+    print(video_obj)
+    return jsonify(video_obj)
 
 if __name__ == '__main__':
     app.run(debug=True, port=8000)

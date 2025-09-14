@@ -70,15 +70,16 @@ def fetch_created_video(api_key, video_id):
     "X-Api-Key": f"{api_key}",
     "Accept": "application/json"
     }
+    status_res = requests.get(status_url, headers=headers)
     while True:
-        status_res = requests.get(status_url, headers=headers)
         if status_res.status_code == 200:
             data = status_res.json()["data"]
             if data["status"] == "completed":
                 print("video-url", data["video_url"])
                 print("✅ Video fetched successfully!")
-                return {"video_url":data["video_url"], "video_data":data}
-        time.sleep(10)
+                break
+        time.sleep(5)
+    return {"video_url":data["video_url"], "video_data":data}
 
 def create_heygen_video(api_key, voiceover):
     url = "https://api.heygen.com/v2/video/generate"
