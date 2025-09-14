@@ -77,13 +77,13 @@ def fetch_created_video(api_key, video_id):
         if data["status"] == "completed":
             print("video-url", data["video_url"])
             print("✅ Video fetched successfully!")
+            return {"video_url":data["video_url"], "video_data":data}
         elif data["status"] == "failed":
             return {"status":"expired"}
         else:
             return {"status":"pending"}
     else:
         return {"status":"error"}
-    return {"video_url":data["video_url"], "video_data":data}
 
 def create_heygen_video(api_key, voiceover):
     url = "https://api.heygen.com/v2/video/generate"
