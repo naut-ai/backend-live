@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import requests
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import cloudinary
 import cloudinary.uploader
 from dotenv import load_dotenv
@@ -10,7 +10,7 @@ import assemblyai as aai
 
 app = Flask(__name__)
 
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "https://naut-demo.web.app"}})
 
 load_dotenv()
 
@@ -37,7 +37,15 @@ def debug_origin():
     print("🚀 NautAI Server v3 Running...")
     print("Request Origin:", request.headers.get("Origin"))
 
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "https://naut-demo.web.app"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response
+
 @app.route('/ask_video', methods=['POST'])
+@cross_origin(origins=["https://naut-demo.web.app"])
 def ask_avatar():
     print("user hit the url")
     user_input = request.json['question']
@@ -146,6 +154,7 @@ def ask_avatar():
     return jsonify({"video_id":video_obj["video_id"]})
 
 @app.route('/get_video', methods=['POST'])
+@cross_origin(origins=["https://naut-demo.web.app"])
 def fetch_video():
     api_credentials = request.json['apiKeys']
     talk_id = request.json['talk_id']
