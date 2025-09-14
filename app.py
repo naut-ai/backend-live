@@ -152,6 +152,8 @@ def fetch_video():
         response = fetch_created_video(api_key=api_credentials["heygenApiKey"], video_id=talk_id)
         if response["status"] == "pending":
             return jsonify({"message":"Video is still processing..."})
+        if response["status"] == "expired":
+            return jsonify({"message":"API Credentials Expired!"})
         if response["status"] == "error":
             return jsonify({"message":"Error from HeyGen!"})    
         print("✅ Fetched video from HeyGen!")
